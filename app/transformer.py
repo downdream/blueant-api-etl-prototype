@@ -1,3 +1,5 @@
+import re
+from html import unescape
 from app.config import TARGET_PORTFOLIO_ID
 
 
@@ -11,6 +13,21 @@ KPI_FIELD_IDS = {
     "planned_completion_percent": "832985592",
     "actual_completion_percent": "832985595",
 }
+
+def clean_html_text(value):
+    """
+    Convert simple HTML content from Blueant API into a readable plain text.
+    """
+
+    if value is None:
+        return None
+    
+    text = str(value)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = unescape(text)
+    text = " ".join(text.split())
+
+    return text
 
 
 def extract_kpis(custom_fields):
@@ -56,13 +73,13 @@ def clean_project_data(projects):
             "end": project.get("end"),
             "planning_type": project.get("planningType"),
             "billing_type": project.get("billingType"),
-            "subject": project.get("subjectMemo"),
-            "problem": project.get("problemMemo"),
-            "objective": project.get("objectiveMemo"),
-            "status_text": project.get("statusMemo"),
-            "conclusion": project.get("conclusionMemo"),
+            "subject": clean_html_text(project.get("subjectMemo")),
+            "problem": clean_html_text(project.get("problemMemo")),
+            "objective": clean_html_text(project.get("objectiveMemo")),
+            "status_text": clean_html_text(project.get("statusMemo")),
+            "conclusion": clean_html_text(project.get("conclusionMemo")),
             "overall_risk": project.get("overallRisk"),
-            "custom_fields": custom_fields,
+            #"custom_fields": custom_fields,
             "kpis": extract_kpis(custom_fields),
         }
 
