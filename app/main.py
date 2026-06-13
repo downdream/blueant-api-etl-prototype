@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import validate_config
 from app.blueant_client import fetch_projects, fetch_portfolio
 from app.transformer import filter_ki_portfolio_projects, clean_project_data
 from app.config import validate_config, TARGET_PORTFOLIO_ID
