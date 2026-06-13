@@ -43,3 +43,22 @@ def fetch_projects():
     data = response.json()
 
     return data.get("projects", [])
+
+def fetch_portfolio(portfolio_id):
+    """
+    Fetch one portfolio from the BlueAnt API by portfolio ID.
+    """
+
+    endpoint = f"/rest/v1/portfolios/{portfolio_id}"
+    url = BLUEANT_BASE_URL + endpoint
+
+    headers = {
+        "Authorization": f"Bearer {BLUEANT_API_KEY}",
+        "Accept": "application/json",
+    }
+
+    response = requests.get(url, headers=headers, timeout=30)
+    print("BlueAnt portfolio API status code:", response.status_code)
+    response.raise_for_status()
+
+    return response.json()
