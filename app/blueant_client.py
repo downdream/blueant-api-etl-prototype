@@ -62,3 +62,22 @@ def fetch_portfolio(portfolio_id):
     response.raise_for_status()
 
     return response.json()
+
+def fetch_project_planning_entries(project_id):
+    """
+    Fetch planning entries for one BlueAnt project which later will be used for the dashboard
+    """
+    
+    endpoint = f"/rest/v1/projects/{project_id}/planningentries"
+    url = BLUEANT_BASE_URL + endpoint
+    
+    headers = {
+        "Authorization": f"Bearer {BLUEANT_API_KEY}",
+        "Accept": "application/json",
+    }
+    
+    response = requests.get(url, headers=headers, timeout=30)
+    print("BlueAnt planning entries API status code:", response.status_code)
+    response.raise_for_status()
+    
+    return response.json()

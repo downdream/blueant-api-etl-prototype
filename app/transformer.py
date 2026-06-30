@@ -14,6 +14,44 @@ KPI_FIELD_IDS = {
     "actual_completion_percent": "832985595",
 }
 
+INDICATOR_FIELD_IDS = {
+    "status_total": "832814142",
+    "progress_percent": "832814146",
+    "status_result": "832814169",
+    "status_time": "832814171",
+    "status_effort": "832814173",
+    "status_explanation": "832814150",
+    "classification": "532205505",
+    "strategy_contribution": "358638926",
+    "confidentiality": "358638949",
+}
+
+STATUS_OPTIONS = {
+    1: "Rot",
+    2: "Gelb",
+    3: "Grün",
+    "1": "Rot",
+    "2": "Gelb",
+    "3": "Grün",
+}
+
+CLASSIFICATION_OPTIONS = {
+    "532205508": "initial project",
+    "532205510": "follow-up-project",
+}
+
+STRATEGY_CONTRIBUTION_OPTIONS = {
+    "358638943": "hoch",
+    "358638945": "mittel",
+    "358638947": "niedrig",
+    "808993519": "sehr niedrig",
+}
+
+CONFIDENTIALITY_OPTIONS = {
+    "358638952": "Vertraulich",
+    "358638954": "Intern",
+}
+
 def clean_html_text(value):
     """
     Convert simple HTML content from Blueant API into a readable plain text.
@@ -29,6 +67,18 @@ def clean_html_text(value):
 
     return text
 
+def clean_overall_risk(overall_risk):
+    """
+    Clean BlueAnt overall risk object for frontend/dashboard usage.
+    """
+
+    if not overall_risk:
+        return None
+
+    return {
+        "overall_risk_id": overall_risk.get("overallRiskId"),
+        "risk_assessment": clean_html_text(overall_risk.get("riskAssessment")),
+    }
 
 def extract_kpis(custom_fields):
     """
@@ -78,11 +128,116 @@ def clean_project_data(projects):
             "objective": clean_html_text(project.get("objectiveMemo")),
             "status_text": clean_html_text(project.get("statusMemo")),
             "conclusion": clean_html_text(project.get("conclusionMemo")),
-            "overall_risk": project.get("overallRisk"),
-            #"custom_fields": custom_fields,
+            "overall_risk": clean_overall_risk(project.get("overallRisk")),
+            "indicators": extract_indicators(custom_fields),
             "kpis": extract_kpis(custom_fields),
         }
 
         clean_projects.append(clean_project)
 
     return clean_projects
+
+def clean_planning_entries(entries):
+    """
+    Clean BlueAnt planning entries for frontend/dashboard usage.
+    """
+    
+    cleaned_entries= []
+    
+    for entry in entries:
+        cleaned_entries= {
+            "id": entry.get("id"),
+            "entry_type": entry.get("entryType"),
+            "number": entry.get("number"),
+            "name": clean_html_text(entry.get("name")),
+            "description": clean_html_text(entry.get("description")),
+            "start": entry.get("start"),
+            "end": entry.get("end"),
+            "parent_id": entry.get("parentId"),
+            "is_collective_task": entry.get("isCollectiveTask", False),
+            "work_planned_days": entry.get("workPlannedDays"),
+            "work_actual_days": entry.get("workActualDays"),
+            "work_estimated_days": entry.get("workEstimatedDays"),
+            "duration_days": entry.get("durationDays"),
+            "progress_actual": entry.get("progressActual"),
+        }
+
+        cleaned_entries.append(cleaned_entry)
+
+    return cleaned_entries
+
+def split_planning_entries(entries):
+    """
+    Split planning entries into tasks and milestones.
+    """
+
+    return {
+        "tasks": [
+            entry for entry in entries
+            if entry.get("entry_type") == "task"
+        ],
+        "milestones": [
+            entry for entry in entries
+            if entry.get("entry_type") == "milestone"
+        ],
+    }
+        
+        
+def map_option(value, options):
+    """
+    Translate BlueAnt option keys into readable labels.
+    """
+    
+    if value is None:
+        return None
+    
+    return options.get(value) or options.get(str(value)) or value 
+
+def extract_indicators(custom_fields):
+    """
+    Extract readable status and metadata indicators from BlueAnt custom fields.
+    """
+    
+    status_total_raw = custom_fields.get(INDICATOR_FIELD_IDS["status_total"])
+    status_result_raw = custom_fields.get(INDICATOR_FIELD_IDS["status_result"])
+    status_time_raw = custom_fields.get(INDICATOR_FIELD_IDS["status_time"])
+    status_effort_raw = custom_fields.get(INDICATOR_FIELD_IDS["status_effort"])
+
+    classification_raw = custom_fields.get(INDICATOR_FIELD_IDS["classification"])
+    strategy_contribution_raw = custom_fields.get(INDICATOR_FIELD_IDS["strategy_contribution"])
+    confidentiality_raw = custom_fields.get(INDICATOR_FIELD_IDS["confidentiality"])
+    
+    return {
+        "status_total": {
+            "raw": status_total_raw,
+            "label": map_option(status_total_raw, STATUS_OPTIONS),
+        },
+        "status_result": {
+            "raw": status_result_raw,
+            "label": map_option(status_result_raw, STATUS_OPTIONS),
+        },
+        "status_time": {
+            "raw": status_time_raw,
+            "label": map_option(status_time_raw, STATUS_OPTIONS),
+        },
+        "status_effort": {
+            "raw": status_effort_raw,
+            "label": map_option(status_effort_raw, STATUS_OPTIONS),
+        },
+        "progress_percent": custom_fields.get(INDICATOR_FIELD_IDS["progress_percent"]),
+        "status_explanation": clean_html_text(
+            custom_fields.get(INDICATOR_FIELD_IDS["status_explanation"])
+        ),
+        "classification": {
+            "raw": classification_raw,
+            "label": map_option(classification_raw, CLASSIFICATION_OPTIONS),
+        },
+        "strategy_contribution": {
+            "raw": strategy_contribution_raw,
+            "label": map_option(strategy_contribution_raw, STRATEGY_CONTRIBUTION_OPTIONS),
+        },
+        "confidentiality": {
+            "raw": confidentiality_raw,
+            "label": map_option(confidentiality_raw, CONFIDENTIALITY_OPTIONS),
+        },
+    }
