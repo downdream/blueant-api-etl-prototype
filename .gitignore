@@ -17,3 +17,7 @@ data/
 
 # VS Code optional
 .vscode/
+
+# Export folder
+exports/
+
