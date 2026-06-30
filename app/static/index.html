@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="de">
+    <head>
+        <meta charset="UTF-8">
+        <title>BlueAnt AI Portfolio Dashboard</title>
+        <link rel="stylesheet" href="/static/style.css">
+    </head>
+    <body>
+        <header>
+            <h1>BlueAnt AI Portfolio Dashboard</h1>
+            <p id="portfolio-info"> Portfolio wird geladen ...</p>
+        </header>
+
+        <main>
+            <section>
+                <h2>Project auswählen</h2>
+                <select id="project-select">
+                    <option value="">Bitte Project auswählen ...</option>
+                </select>
+            </section>
+
+            <section id="project-details">
+                <h2>Project Details</h2>
+                <p>Noch kein Project ausgewählt.</p>
+            </section>
+
+            <section id="kpi-section">
+                <h2>KPIs</h2>
+                <div id="kpi-cards"></div>
+            </section>
+
+            <section id="indicator-section">
+            <h2>Statusindikatoren</h2>
+            <div id="indicator-cards"></div>
+            </section>
+
+            <section id="planning-section">
+                <h2>Planung und Meilensteine</h2>
+                <div id="planning-content"></div>
+            </section>
+
+            <section id="ai-section">
+                <h2>KI-Analyse</h2>
+                <div class="placeholder">
+                    KI-Analyse wird später ergänzt.
+                </div>
+            </section>
+        </main>
+
+        <script src="/static/app.js"></script>
+    </body>
+</html>

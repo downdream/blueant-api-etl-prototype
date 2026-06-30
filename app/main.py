@@ -1,5 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 
 from app.blueant_client import fetch_projects, fetch_portfolio, fetch_project_planning_entries
 from app.transformer import filter_ki_portfolio_projects, clean_project_data, clean_planning_entries, split_planning_entries
@@ -40,11 +43,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/app")
+def frontend():
+    index_file = STATIC_DIR / "index.html"
+
+    if not index_file.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Frontend file not found: {index_file}",
+        )
+
+    return FileResponse(index_file)
+
 @app.get("/")
 def root():
     return {
         "message": "BlueAnt API Backend is running",
         "available_endpoints": [
+            "/app",
             "/api/projects",
             "/api/portfolio",
             "/api/projects/{project_id}/planningentries",
