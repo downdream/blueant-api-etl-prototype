@@ -142,10 +142,10 @@ def clean_planning_entries(entries):
     Clean BlueAnt planning entries for frontend/dashboard usage.
     """
     
-    cleaned_entries= []
+    cleaned_entries = []
     
     for entry in entries:
-        cleaned_entries= {
+        cleaned_entry = {
             "id": entry.get("id"),
             "entry_type": entry.get("entryType"),
             "number": entry.get("number"),

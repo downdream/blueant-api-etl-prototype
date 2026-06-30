@@ -6,6 +6,21 @@ from app.transformer import filter_ki_portfolio_projects, clean_project_data, cl
 from app.config import validate_config, TARGET_PORTFOLIO_ID
 
 
+def get_clean_project_by_id(project_id: int):
+    """
+    Load AI portfolio projects, clean them, and return one project by ID for dashboard usage
+    """
+    
+    all_projects = fetch_projects()
+    ki_projects = filter_ki_portfolio_projects(all_projects)
+    clean_project = clean_project_data(ki_projects)
+    
+    for project in clean_project:
+        if project.get("id") == project_id:
+            return project
+        
+    return None
+
 app = FastAPI(
     title="BlueAnt API Backend",
     description="Backend prototype for extracting and preparing BlueAnt project data.",
@@ -29,7 +44,12 @@ app.add_middleware(
 def root():
     return {
         "message": "BlueAnt API Backend is running",
-        "available_endpoints": ["/api/projects"],
+        "available_endpoints": [
+            "/api/projects",
+            "/api/portfolio",
+            "/api/projects/{project_id}/planningentries",
+            "/api/projects/{project_id}/dashboard",
+        ],
     }
 
 
@@ -71,16 +91,6 @@ def get_portfolio():
         return portfolio
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))
-
-@app.get("/api/projects/{project_id}/planningentries")
-def get_project_planning_entries(project_id: int):
-    try:
-        validate_config()
-        planning_entries = fetch_project_planning_entries(project_id)
-        return planning_entries
-
-    except Exception as error:
-        raise HTTPException(status_code=500, detail=str(error))
     
 
 @app.get("/api/projects/{project_id}/planningentries")
@@ -103,6 +113,44 @@ def get_project_planning_entries(project_id: int):
             "tasks": grouped_entries["tasks"],
             "milestones": grouped_entries["milestones"],
         }
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+@app.get("/api/projects/{project_id}/dashboard")
+def get_project_dashboard(project_id: int):
+    try:
+        validate_config()
+
+        project = get_clean_project_by_id(project_id)
+
+        if not project:
+            raise HTTPException(
+                status_code=404,
+                detail="Project not found in AI Portfolio",
+            )
+
+        planning_response = fetch_project_planning_entries(project_id)
+        raw_entries = planning_response.get("entries", [])
+
+        cleaned_entries = clean_planning_entries(raw_entries)
+        grouped_entries = split_planning_entries(cleaned_entries)
+
+        return {
+            "project": project,
+            "planning": {
+                "total_entries": len(cleaned_entries),
+                "total_tasks": len(grouped_entries["tasks"]),
+                "total_milestones": len(grouped_entries["milestones"]),
+                "entries": cleaned_entries,
+                "tasks": grouped_entries["tasks"],
+                "milestones": grouped_entries["milestones"],
+            },
+        }
+
+    except HTTPException:
+        raise
 
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))
